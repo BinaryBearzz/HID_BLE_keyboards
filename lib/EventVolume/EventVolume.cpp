@@ -46,11 +46,17 @@ EventVolume::EventVolume(int pin, int inMin, int inMax, readType readType)
         pinMode(pinData, INPUT);
 }
 
-void EventVolume::calibrate(int inMin, int inMax)
+void EventVolume::calibrate(int inMin, int inMax, int outMin, int outMax)
 {
     _inputType = volume;
     _inMin = inMin;
     _inMax = inMax;
+    _outMin = outMin;
+    _outMax = outMax;
+}
+void EventVolume::setStepIndicator(int setValue)
+{
+    stepIndicator = setValue;
 }
 
 EventVolume::~EventVolume()
@@ -64,18 +70,18 @@ void EventVolume::handler()
 
     if(_inputType == volume)
     {    
-        _nml_value = map(input, _inMin, _inMax, 1 , 256);
+        _nml_value = map(input, _inMin, _inMax, _outMin , _outMax);
         // Serial.println("NML:"+ String(_nml_value));
         // Serial.println("previousValue:"+ String(previousValue));
         if(previousValue != _nml_value)
         {
             int difference = _nml_value - previousValue;
             // Serial.println("Difference: "+String(difference));
-            if(difference < -5)
+            if(difference < -stepIndicator)
             {
                 _Event_Down();
             }
-            else if (difference > 5)
+            else if (difference > stepIndicator)
             {
                 _Event_Up();
             }    
@@ -119,6 +125,8 @@ void EventVolume::onEventVolumeDown(onVolumeDown ovD)
 {
     _Event_Down = ovD;
 }
+
+
 
 void EventVolume::onEventSW(onSW oSW)
 {

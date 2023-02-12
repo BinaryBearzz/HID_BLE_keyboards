@@ -28,6 +28,7 @@ void setup() {
       BLE_KB.write(KEY_MEDIA_VOLUME_UP);
     }
   });
+
   volumes.onEventVolumeDown([](){
     Serial.println("VolumeDown-");
     if(BLE_KB.isConnected())
@@ -55,6 +56,19 @@ void setup() {
           BLE_KB.write(KEY_MEDIA_VOLUME_UP);
         }
       }
+    }
+  });
+
+  sws.onEventVolumeDown([](){
+    Serial.println("VolumeDown-");
+    if(BLE_KB.isConnected())
+    {
+      BLE_KB.write(KEY_MEDIA_VOLUME_DOWN);
+      BLE_KB.write(KEY_MEDIA_VOLUME_DOWN);
+      BLE_KB.write(KEY_MEDIA_VOLUME_DOWN);
+      BLE_KB.write(KEY_MEDIA_VOLUME_DOWN);
+      BLE_KB.write(KEY_MEDIA_VOLUME_DOWN);
+      BLE_KB.write(KEY_MEDIA_VOLUME_DOWN);
     }
   });
 }
