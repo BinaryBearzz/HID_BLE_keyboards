@@ -1,71 +1,9 @@
 #include <Arduino.h>
 #include <lvgl.h>
 #include <TFT_eSPI.h>
-#define enble_debug 0
-#define debug      \
-  if (enble_debug) \
-  Serial
-
-#define axisX 36
-#define axisY 39
-#define button_sw 32
 
 static const uint16_t screenWidth = TFT_HEIGHT;
 static const uint16_t screenHeight = TFT_WIDTH;
-
-static lv_disp_draw_buf_t draw_buf;
-static lv_color_t buf[screenWidth * 10];
-
-TFT_eSPI tft = TFT_eSPI(); /* TFT instance */
-
-#if LV_USE_LOG != 0
-/* Serial debugging */
-void my_print(const char *buf);
-{
-  Serial.printf(buf);
-  Serial.flush();
-}
-#endif
-
-/* Display flushing */
-void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
-{
-  uint32_t w = (area->x2 - area->x1 + 1);
-  uint32_t h = (area->y2 - area->y1 + 1);
-
-  tft.startWrite();
-  tft.setAddrWindow(area->x1, area->y1, w, h);
-  tft.pushColors((uint16_t *)&color_p->full, w * h, true);
-  tft.endWrite();
-
-  lv_disp_flush_ready(disp);
-}
-
-void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
-{
-  uint16_t touchX, touchY;
-
-  bool touched = tft.getTouch(&touchX, &touchY, 600);
-
-  if (!touched)
-  {
-    data->state = LV_INDEV_STATE_REL;
-  }
-  else
-  {
-    data->state = LV_INDEV_STATE_PR;
-
-    /*Set the coordinates*/
-    data->point.x = touchX;
-    data->point.y = touchY;
-
-    debug.print("Data x ");
-    debug.println(touchX);
-
-    debug.print("Data y ");
-    debug.println(touchY);
-  }
-}
 
 static void event_handler(lv_event_t *e)
 {
@@ -210,9 +148,6 @@ static void add_data(lv_timer_t *timer)
   cnt++;
 }
 
-/**
- * Add a faded area effect to the line chart and make some division lines ticker
- */
 void lv_example_chart_2(void)
 {
   /*Create a chart1*/
@@ -262,81 +197,36 @@ void arc_1(void)
   lv_event_send(arc, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
-// static void value_changed_event_cb(lv_event_t * e)
-// {
-//     lv_obj_t * arc = lv_event_get_target(e);
-//     lv_obj_t * label = lv_event_get_user_data(e);
-
-//     lv_label_set_text_fmt(label, "%d%%", lv_arc_get_value(arc);
-//     /*Rotate the label to the current position of the arc*/
-//     lv_arc_rotate_obj_to_angle(arc, label, 25);
-// }
-
-void setup()
+void lv_example_btn_grid(void)
 {
-  Serial.begin(115200); /* prepare for possible serial debug */
+    static lv_coord_t col_dsc[] = {85, 85, 85, LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t row_dsc[] = {55, 55, 55, LV_GRID_TEMPLATE_LAST};
 
-  Serial.println("BF->S_RAM: " + String(ESP.getFreeHeap()));
-  Serial.println("BF->PS_RAM: " + String(ESP.getFreePsram()));
+    /*Create a container with grid*/
+    lv_obj_t * cont = lv_obj_create(lv_scr_act());
+    lv_obj_set_style_grid_column_dsc_array(cont, col_dsc, 0);
+    lv_obj_set_style_grid_row_dsc_array(cont, row_dsc, 0);
+    lv_obj_set_size(cont, 310, 225);
+    lv_obj_center(cont);
+    lv_obj_set_layout(cont, LV_LAYOUT_GRID);
 
-  String LVGL_Arduino = "Hello Arduino! ";
-  LVGL_Arduino += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
+    lv_obj_t * label;
+    lv_obj_t * obj;
 
-  Serial.println(LVGL_Arduino);
-  Serial.println("I am LVGL_Arduino");
-  // ledcSetup(10, 5000 /*freq*/, 10 /*resolution*/);
-  // ledcAttachPin(32, 10);
-  // analogReadResolution(10);
-  // ledcWrite(10, 768);
-  lv_init();
-  // lv_font_load(th_psk);
-  // #if LV_USE_LOG != 0
-  //     lv_log_register_print_cb( my_print ); /* register print function for debugging */
-  // #endif
-  // tft.init(INITR_BLACKTAB);
-  tft.begin();        /* TFT init */
-  tft.setRotation(3); /* Landscape orientation, flipped */
-  // tft.invertDisplay(true);
-  // tft.fillScreen(TFT_BLUE);
-  /*Set the touchscreen calibration data,
-   the actual data for your display can be acquired using
-   the Generic -> Touch_calibrate example from the TFT_eSPI library*/
-  //   uint16_t calData[5] = {275, 3620, 264, 3532, 1};
-  //   tft.setTouch(calData);
+    uint32_t i;
+    for(i = 0; i < 9; i++) {
+        uint8_t col = i % 3;
+        uint8_t row = i / 3;
 
-  lv_disp_draw_buf_init(&draw_buf, buf, NULL, screenWidth * 10);
-
-  /*Initialize the display*/
-  static lv_disp_drv_t disp_drv;
-  lv_disp_drv_init(&disp_drv);
-  /*Change the following line to your display resolution*/
-  disp_drv.hor_res = screenWidth;
-  disp_drv.ver_res = screenHeight;
-  disp_drv.flush_cb = my_disp_flush;
-  disp_drv.draw_buf = &draw_buf;
-  lv_disp_drv_register(&disp_drv);
-
-  /*Initialize the (dummy) input device driver*/
-  static lv_indev_drv_t indev_drv;
-  lv_indev_drv_init(&indev_drv);
-  indev_drv.type = LV_INDEV_TYPE_POINTER;
-  indev_drv.read_cb = my_touchpad_read;
-  lv_indev_drv_register(&indev_drv);
-
-  /*
-  register function here!!!
-  */
-  lv_example_switch_1();
-//   lv_example_chart_2();
-//   arc_1();/
-
-  Serial.println("S_RAM: " + String(ESP.getFreeHeap()));
-  Serial.println("PS_RAM: " + String(ESP.getFreePsram()));
-}
-
-void loop()
-{
-  // lv_timer_handler(); /* let the GUI do its work */
-  lv_task_handler();
-  delay(5);
+        obj = lv_btn_create(cont);
+        /*Stretch the cell horizontally and vertically too
+         *Set span to 1 to make the cell 1 column/row sized*/
+        lv_obj_set_grid_cell(obj, LV_GRID_ALIGN_STRETCH, col, 1,
+                             LV_GRID_ALIGN_STRETCH, row, 1);
+        
+        label = lv_label_create(obj);
+        lv_label_set_text_fmt(label, "c%d, r%d", col, row);
+        lv_obj_center(label);
+    }
+    lv_obj_center(obj);
 }

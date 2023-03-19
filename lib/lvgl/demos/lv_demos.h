@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define LV_USE_DEMO_MUSIC 1
+
 /*********************
  *      INCLUDES
  *********************/
