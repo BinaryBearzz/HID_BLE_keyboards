@@ -7,13 +7,14 @@ const int Apin = 2;
 const int Bpin = 4;
 #define LED 5
 
-std::string nameDevice = "BLE_volume";
+std::string nameDevice = "BLE_VOLUME";
 BleKeyboard BLE_KB(nameDevice, "Espressif", 100);
 
 ESP32Encoder encoder;
 EventChange ev_change;
 unsigned long prv = 0;
 int interval = 500;
+
 void blinkStatus()
 {
 
